@@ -1,0 +1,13 @@
+*.db
+*.db-shm
+*.db-wal
+/server
+.env
+.env.*
+!.env.example
+
+# terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/terraform.tfvars

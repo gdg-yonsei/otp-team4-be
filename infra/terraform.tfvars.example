@@ -1,0 +1,10 @@
+# cp terraform.tfvars.example terraform.tfvars 후 값 채우기
+
+ssh_public_key = "ssh-ed25519 AAAA... me@mac"
+
+# 내 IP만 SSH 허용 (curl -s ifconfig.me 로 확인)
+ssh_allowed_cidr = "1.2.3.4/32"
+
+# server_spec_code = "mi1-g3"
+# image_name       = "ubuntu-22.04-base"
+# zone             = "KR-2"

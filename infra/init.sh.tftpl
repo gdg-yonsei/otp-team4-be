@@ -1,0 +1,25 @@
+#!/bin/bash
+# Runs once on the server's first boot (ncloud_init_script).
+# NOTE: NCP rejects init scripts containing non-English characters. Keep this file ASCII only.
+set -euo pipefail
+
+# 1. Register SSH public key for root
+mkdir -p /root/.ssh
+chmod 700 /root/.ssh
+echo '${ssh_public_key}' >> /root/.ssh/authorized_keys
+chmod 600 /root/.ssh/authorized_keys
+
+# 2. Install Docker (Ubuntu package) and start it on boot
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y docker.io
+systemctl enable --now docker
+
+# 3. App directories
+#   /opt/otp-server/.env  : environment variables (uploaded by deploy.sh)
+#   /opt/otp-server/data  : SQLite DB, mounted at /data in the container
+# The container runs as distroless nonroot (uid 65532), so it must own the data dir.
+mkdir -p /opt/otp-server/data
+touch /opt/otp-server/.env
+chmod 600 /opt/otp-server/.env
+chown 65532:65532 /opt/otp-server/data
