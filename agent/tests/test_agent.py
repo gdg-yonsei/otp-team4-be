@@ -155,7 +155,7 @@ def make_gen(plans, contents=None, fail=()):
     calls = {"plan": [], "write": []}
     plans = list(plans)
 
-    async def fake_parse(system, chat, task, schema):
+    async def fake_parse(chat, task, schema, max_output_tokens=None, timeout=None, reasoning_effort=None):
         if schema is WikiPlan:
             calls["plan"].append(task)
             return WikiPlan(pages=[PagePlan(title=t, category=c, summary="s") for t, c in plans.pop(0)])
@@ -210,3 +210,34 @@ def test_clean_links():
     src = "[[박건휘]]는 [[ 김민정 ]]과 [[없는사람]], [[김민정|민정]], [[나]] 와 [[모임]]에서"
     out = clean_links(src, ["박건휘", "김민정", "모임", "나"], self_title="나")
     assert out == "[[박건휘]]는 [[김민정]]과 없는사람, [[김민정]], 나 와 [[모임]]에서"
+
+
+def test_write_retries_after_timeout():
+    gen, calls = make_gen([[]])
+    real = gen._parse
+    state = {"n": 0}
+
+    async def flaky(chat, task, schema, max_output_tokens=None, timeout=None, reasoning_effort=None):
+        if task.get("task") == "write":
+            state["n"] += 1
+            if state["n"] == 1:
+                raise TimeoutError()
+        return await real(chat, task, schema)
+
+    gen._parse = flaky
+    pages = asyncio.run(gen.generate(msgs("A"), existing_titles=[]))
+    assert [p["title"] for p in pages] == ["A"] and state["n"] == 2
+
+
+def test_reasoning_effort_per_stage():
+    gen, _ = make_gen([[]])
+    real = gen._parse
+    seen = []
+
+    async def spy(chat, task, schema, max_output_tokens=None, timeout=None, reasoning_effort=None):
+        seen.append((task["task"], reasoning_effort))
+        return await real(chat, task, schema)
+
+    gen._parse = spy
+    asyncio.run(gen.generate(msgs("A"), existing_titles=[]))
+    assert seen == [("plan", "medium"), ("write", "low")]

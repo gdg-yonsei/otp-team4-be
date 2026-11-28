@@ -26,7 +26,10 @@ class Settings:
     # 한 작업에서 쓸 문서 수 상한 (문서마다 모델을 한 번씩 호출한다)
     max_pages: int = 40
     # 문서 작성 동시 호출 수. 높을수록 빠르지만 OpenAI 분당 토큰 한도(TPM)에 걸리기 쉽다.
-    write_concurrency: int = 10
+    write_concurrency: int = 20
+    # 모델 추론량: minimal | low | medium | high. 빈 값이면 모델 기본값.
+    plan_reasoning_effort: str = "medium"
+    write_reasoning_effort: str = "low"
     # PERSON 문서를 만들지 않을 발신자 (봇 등). 쉼표 구분.
     excluded_senders: frozenset[str] = frozenset({"채팅봇"})
 
@@ -49,6 +52,8 @@ class Settings:
             max_concurrent_jobs=_int("MAX_CONCURRENT_JOBS", cls.max_concurrent_jobs),
             max_pages=_int("MAX_PAGES", cls.max_pages),
             write_concurrency=_int("WRITE_CONCURRENCY", cls.write_concurrency),
+            plan_reasoning_effort=os.environ.get("PLAN_REASONING_EFFORT", cls.plan_reasoning_effort),
+            write_reasoning_effort=os.environ.get("WRITE_REASONING_EFFORT", cls.write_reasoning_effort),
             excluded_senders=(
                 frozenset(x.strip() for x in os.environ["EXCLUDED_SENDERS"].split(",") if x.strip())
                 if "EXCLUDED_SENDERS" in os.environ else cls.excluded_senders

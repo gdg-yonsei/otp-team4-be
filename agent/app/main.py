@@ -121,6 +121,8 @@ def create_app(settings: Settings, generator: Generator | None = None, backend: 
             excluded_senders=settings.excluded_senders,
             max_pages=settings.max_pages,
             write_concurrency=settings.write_concurrency,
+            plan_reasoning_effort=settings.plan_reasoning_effort or None,
+            write_reasoning_effort=settings.write_reasoning_effort or None,
         )
         yield
         for t in tasks:

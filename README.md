@@ -105,7 +105,7 @@ agent/              AI 에이전트 서버 (Python, FastAPI + OpenAI) — 아래
 1. `PROCESSING` 보고
 2. 모든 대화 파일의 `messages`를 시간순으로 합치고(중복 제거) 2단계로 생성한다 (`app/generator.py`의 `PLAN_PROMPT`, `SYSTEM_PROMPT`)
    - **계획**: 만들 문서 목록(제목, 카테고리, 다룰 내용)을 정한다. 참여자 전원(`EXCLUDED_SENDERS` 제외)의 `PERSON`은 코드가 보장한다.
-   - **작성**: 문서마다 한 번씩 호출해서 그 문서 하나만 자세히 쓴다 (`WRITE_CONCURRENCY`개씩 병렬, 기본 10, 최대 `MAX_PAGES`개). system + 대화 부분이 매번 같아서 OpenAI 프롬프트 캐시가 적용된다. 한 문서가 실패해도 나머지는 저장한다.
+   - **작성**: 문서마다 한 번씩 호출해서 그 문서 하나만 자세히 쓴다 (`WRITE_CONCURRENCY`개씩 병렬, 기본 20, 최대 `MAX_PAGES`개. 추론량은 계획 `medium`, 작성 `low`). system + 대화 부분이 매번 같아서 OpenAI 프롬프트 캐시가 적용된다. 한 문서가 실패해도 나머지는 저장한다.
    - 입력이 `MAX_INPUT_CHARS`를 넘으면 메시지 단위로 나눠 조각마다 계획하고, 문서는 관련 조각으로 쓴다. `MAX_CHUNKS`를 넘으면 실패 처리(비용 보호).
    - 섹션 구성이 틀리면 한 번 더 생성하고, 위키에 없는 제목으로 가는 `[[링크]]`는 일반 글자로 푼다.
 3. 위키에 이미 있는 제목은 건너뛰고 `POST /pages` (문서는 Markdown)
