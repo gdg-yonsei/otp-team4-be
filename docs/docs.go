@@ -105,6 +105,44 @@ const docTemplate = `{
                     }
                 }
             },
+            "delete": {
+                "security": [
+                    {
+                        "AgentToken": []
+                    }
+                ],
+                "description": "위키와 그 안의 문서, 대화 파일, AI 생성 작업, 세션을 모두 지운다. 되돌릴 수 없다.\n비밀번호 위키는 세션 쿠키가 있어야 한다. 진행 중인 AI 생성 작업이 있어도 삭제되며, 그 작업은 이후 실패한다.",
+                "tags": [
+                    "wikis"
+                ],
+                "summary": "위키 삭제",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "위키 ID (UUID)",
+                        "name": "wikiId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "WIKI_LOCKED",
+                        "schema": {
+                            "$ref": "#/definitions/apperr.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "WIKI_NOT_FOUND",
+                        "schema": {
+                            "$ref": "#/definitions/apperr.Error"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "security": [
                     {
@@ -212,7 +250,7 @@ const docTemplate = `{
                         "AgentToken": []
                     }
                 ],
-                "description": "카카오톡 \"대화 내보내기\" TXT 파일 (PC / Android / iOS).",
+                "description": "카카오톡 \"대화 내보내기\" TXT 파일 (PC / Android / iOS) 또는 CSV 파일 (날짜,이름,내용).",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -233,7 +271,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "file",
-                        "description": "카카오톡 대화 TXT",
+                        "description": "카카오톡 대화 TXT 또는 CSV",
                         "name": "file",
                         "in": "formData",
                         "required": true

@@ -34,7 +34,7 @@ var (
 	ErrTitleDuplicate    = New(http.StatusConflict, "PAGE_TITLE_DUPLICATE", "같은 제목의 문서가 이미 존재합니다.")
 	ErrGenerationRunning = New(http.StatusConflict, "GENERATION_IN_PROGRESS", "이미 진행 중인 AI 생성 작업이 있습니다.")
 	ErrFileTooLarge      = New(http.StatusRequestEntityTooLarge, "FILE_TOO_LARGE", "업로드 파일 크기가 제한을 초과했습니다.")
-	ErrInvalidChatFile   = New(http.StatusBadRequest, "INVALID_CHAT_FILE", "카카오톡 대화 내보내기 TXT 파일 형식이 아닙니다.")
+	ErrInvalidChatFile   = New(http.StatusBadRequest, "INVALID_CHAT_FILE", "카카오톡 대화 내보내기 TXT 또는 CSV 파일 형식이 아닙니다.")
 	ErrTooManyRequests   = New(http.StatusTooManyRequests, "TOO_MANY_REQUESTS", "요청 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요.")
 	ErrInternal          = New(http.StatusInternalServerError, "INTERNAL_ERROR", "서버 내부 오류가 발생했습니다.")
 )

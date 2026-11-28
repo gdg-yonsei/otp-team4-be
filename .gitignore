@@ -11,3 +11,8 @@ infra/.terraform/
 infra/*.tfstate
 infra/*.tfstate.*
 infra/terraform.tfvars
+
+# python agent
+agent/.venv/
+__pycache__/
+.pytest_cache/

@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"time"
 
+	"otp-server/internal/kakao"
 	"otp-server/internal/model"
 	"otp-server/internal/service"
 )
@@ -32,10 +33,31 @@ type Request struct {
 }
 
 type Chat struct {
-	ID           string `json:"id"`
-	FileName     string `json:"fileName"`
-	MessageCount int    `json:"messageCount"`
-	Content      string `json:"content"` // original KakaoTalk export text
+	ID           string    `json:"id"`
+	FileName     string    `json:"fileName"`
+	MessageCount int       `json:"messageCount"`
+	Content      string    `json:"content"`  // original export file (TXT or CSV)
+	Messages     []Message `json:"messages"` // parsed messages, same for every file format
+}
+
+// Message is one parsed chat message. SentAt is "2006-01-02 15:04:05" in KST.
+type Message struct {
+	SentAt string `json:"sentAt"`
+	Sender string `json:"sender"`
+	Text   string `json:"text"`
+}
+
+func toMessages(fileName, content string) []Message {
+	msgs, err := kakao.ParseFile(fileName, []byte(content))
+	if err != nil {
+		slog.Warn("parse chat for agent", "file", fileName, "err", err)
+		return []Message{}
+	}
+	out := make([]Message, len(msgs))
+	for i, m := range msgs {
+		out[i] = Message{SentAt: m.SentAt.In(kakao.KST).Format(time.DateTime), Sender: m.Sender, Text: m.Text}
+	}
+	return out
 }
 
 type Client struct {
@@ -159,7 +181,8 @@ func (d *Dispatcher) dispatch(ctx context.Context, jobID string) error {
 
 	req := Request{JobID: job.ID, WikiID: wiki.ID, WikiName: wiki.Name, Mode: job.Mode}
 	for _, c := range chats {
-		req.Chats = append(req.Chats, Chat{ID: c.ID, FileName: c.FileName, MessageCount: c.MessageCount, Content: c.Content})
+		req.Chats = append(req.Chats, Chat{ID: c.ID, FileName: c.FileName, MessageCount: c.MessageCount,
+			Content: c.Content, Messages: toMessages(c.FileName, c.Content)})
 	}
 	if err := d.client.Send(ctx, req); err != nil {
 		return err

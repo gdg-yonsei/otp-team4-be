@@ -17,6 +17,7 @@ import (
 	"otp-server/internal/config"
 	"otp-server/internal/database"
 	"otp-server/internal/handler"
+	"otp-server/internal/model"
 	"otp-server/internal/service"
 )
 
@@ -281,5 +282,23 @@ func TestEndToEnd(t *testing.T) {
 	}
 	if s := owner.do("GET", base+"/pages/"+pid, nil, &e); s != 404 || e["code"] != "PAGE_NOT_FOUND" {
 		t.Fatalf("deleted page: %d %v", s, e)
+	}
+
+	// delete wiki: needs access, removes everything
+	if s := stranger.do("DELETE", base, nil, &e); s != 401 || e["code"] != "WIKI_LOCKED" {
+		t.Fatalf("stranger delete wiki: %d %v", s, e)
+	}
+	if s := owner.do("DELETE", base, nil, nil); s != 204 {
+		t.Fatalf("delete wiki: %d", s)
+	}
+	if s := owner.do("GET", base+"/pages", nil, &e); s != 404 || e["code"] != "WIKI_NOT_FOUND" {
+		t.Fatalf("deleted wiki: %d %v", s, e)
+	}
+	for _, m := range []any{&model.Page{}, &model.Chat{}, &model.GenerationJob{}, &model.WikiSession{}} {
+		var n int64
+		db.Model(m).Where("wiki_id = ?", id).Count(&n)
+		if n != 0 {
+			t.Fatalf("%T rows left after wiki delete: %d", m, n)
+		}
 	}
 }

@@ -365,6 +365,32 @@ paths:
       tags:
       - wikis
   /wikis/{wikiId}:
+    delete:
+      description: |-
+        위키와 그 안의 문서, 대화 파일, AI 생성 작업, 세션을 모두 지운다. 되돌릴 수 없다.
+        비밀번호 위키는 세션 쿠키가 있어야 한다. 진행 중인 AI 생성 작업이 있어도 삭제되며, 그 작업은 이후 실패한다.
+      parameters:
+      - description: 위키 ID (UUID)
+        in: path
+        name: wikiId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: WIKI_LOCKED
+          schema:
+            $ref: '#/definitions/apperr.Error'
+        "404":
+          description: WIKI_NOT_FOUND
+          schema:
+            $ref: '#/definitions/apperr.Error'
+      security:
+      - AgentToken: []
+      summary: 위키 삭제
+      tags:
+      - wikis
     get:
       parameters:
       - description: 위키 ID (UUID)
@@ -460,14 +486,14 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: 카카오톡 "대화 내보내기" TXT 파일 (PC / Android / iOS).
+      description: 카카오톡 "대화 내보내기" TXT 파일 (PC / Android / iOS) 또는 CSV 파일 (날짜,이름,내용).
       parameters:
       - description: 위키 ID (UUID)
         in: path
         name: wikiId
         required: true
         type: string
-      - description: 카카오톡 대화 TXT
+      - description: 카카오톡 대화 TXT 또는 CSV
         in: formData
         name: file
         required: true

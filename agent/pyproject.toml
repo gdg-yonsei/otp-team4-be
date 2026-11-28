@@ -1,0 +1,16 @@
+[project]
+name = "katalk-wiki-agent"
+version = "0.1.0"
+description = "카톡 위키 AI 에이전트: 대화 → 위키 문서 생성 후 otp-server API로 저장"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "openai",
+    "pydantic",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+

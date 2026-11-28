@@ -66,6 +66,7 @@ func (h *Handler) Router() *gin.Engine {
 	{
 		w.GET("", h.getWiki)
 		w.PATCH("", h.updateWiki)
+		w.DELETE("", h.deleteWiki)
 
 		w.POST("/chats", h.uploadChat)
 		w.GET("/chats", h.listChats)
@@ -199,6 +200,29 @@ func (h *Handler) getWiki(c *gin.Context) {
 	c.JSON(http.StatusOK, h.wikiResp(middleware.Wiki(c), true))
 }
 
+// deleteWiki godoc
+//
+//	@Summary		위키 삭제
+//	@Description	위키와 그 안의 문서, 대화 파일, AI 생성 작업, 세션을 모두 지운다. 되돌릴 수 없다.
+//	@Description	비밀번호 위키는 세션 쿠키가 있어야 한다. 진행 중인 AI 생성 작업이 있어도 삭제되며, 그 작업은 이후 실패한다.
+//	@Tags			wikis
+//	@Param			wikiId	path	string	true	"위키 ID (UUID)"
+//	@Success		204
+//	@Failure		401	{object}	apperr.Error	"WIKI_LOCKED"
+//	@Failure		404	{object}	apperr.Error	"WIKI_NOT_FOUND"
+//	@Security		AgentToken
+//	@Router			/wikis/{wikiId} [delete]
+func (h *Handler) deleteWiki(c *gin.Context) {
+	id := middleware.Wiki(c).ID
+	if err := h.wikis.Delete(c.Request.Context(), id); err != nil {
+		middleware.Abort(c, err)
+		return
+	}
+	// The session is gone server-side; also drop the cookie in the browser.
+	h.setSessionCookie(c, id, "", time.Unix(0, 0))
+	c.Status(http.StatusNoContent)
+}
+
 // updateWiki godoc
 //
 //	@Summary		위키 설정 변경
@@ -246,12 +270,12 @@ func toChatResponse(ch *model.Chat) ChatResponse {
 // uploadChat godoc
 //
 //	@Summary		대화 파일 업로드
-//	@Description	카카오톡 "대화 내보내기" TXT 파일 (PC / Android / iOS).
+//	@Description	카카오톡 "대화 내보내기" TXT 파일 (PC / Android / iOS) 또는 CSV 파일 (날짜,이름,내용).
 //	@Tags			chats
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			wikiId	path		string	true	"위키 ID (UUID)"
-//	@Param			file	formData	file	true	"카카오톡 대화 TXT"
+//	@Param			file	formData	file	true	"카카오톡 대화 TXT 또는 CSV"
 //	@Success		201		{object}	ChatResponse
 //	@Failure		400		{object}	apperr.Error	"INVALID_CHAT_FILE"
 //	@Failure		401		{object}	apperr.Error	"WIKI_LOCKED"
@@ -269,7 +293,7 @@ func (h *Handler) uploadChat(c *gin.Context) {
 			middleware.Abort(c, apperr.ErrFileTooLarge)
 			return
 		}
-		middleware.Abort(c, apperr.BadRequest("file 필드에 TXT 파일을 첨부해 주세요."))
+		middleware.Abort(c, apperr.BadRequest("file 필드에 TXT 또는 CSV 파일을 첨부해 주세요."))
 		return
 	}
 	if fh.Size > h.cfg.MaxUploadBytes {

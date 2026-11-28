@@ -1,4 +1,4 @@
-// Package kakao parses KakaoTalk chat export TXT files.
+// Package kakao parses KakaoTalk chat exports (TXT and CSV; see csv.go for CSV).
 //
 // Supported formats (Korean and English locales):
 //

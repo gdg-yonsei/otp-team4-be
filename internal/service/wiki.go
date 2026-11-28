@@ -75,6 +75,27 @@ func (s *WikiService) Get(ctx context.Context, id string) (*model.Wiki, error) {
 	return &w, nil
 }
 
+// Delete removes the wiki and everything in it (pages, chats, generation jobs,
+// sessions) in one transaction. A job still running at the agent will fail on
+// its next API call with 404.
+func (s *WikiService) Delete(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, m := range []any{&model.Page{}, &model.Chat{}, &model.GenerationJob{}, &model.WikiSession{}} {
+			if err := tx.Where("wiki_id = ?", id).Delete(m).Error; err != nil {
+				return err
+			}
+		}
+		res := tx.Where("id = ?", id).Delete(&model.Wiki{})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return apperr.ErrWikiNotFound
+		}
+		return nil
+	})
+}
+
 type UpdateWikiInput struct {
 	Name *string
 	// Password: nil = unchanged, "" = remove password, otherwise set new password.

@@ -1,11 +1,9 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -22,10 +20,7 @@ type ChatService struct {
 func NewChatService(db *gorm.DB) *ChatService { return &ChatService{db: db} }
 
 func (s *ChatService) Upload(ctx context.Context, wikiID, fileName string, data []byte) (*model.Chat, error) {
-	if ext := strings.ToLower(filepath.Ext(fileName)); ext != ".txt" {
-		return nil, apperr.ErrInvalidChatFile
-	}
-	msgs, err := kakao.Parse(bytes.NewReader(data))
+	msgs, err := kakao.ParseFile(fileName, data)
 	if err != nil || len(msgs) == 0 {
 		return nil, apperr.ErrInvalidChatFile
 	}
